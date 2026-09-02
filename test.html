@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+</head>
+<body>
+    <script>
+        async function testFirebase() {
+            try {
+                console.log("Intentando guardar en Firebase...");
+                const docRef = await db.collection("appointments").add({
+                    test: "test",
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                console.log("EXITO_GUARDADO: " + docRef.id);
+                document.body.innerHTML = "EXITO_GUARDADO: " + docRef.id;
+            } catch (error) {
+                console.error("ERROR_GUARDADO: ", error);
+                document.body.innerHTML = "ERROR_GUARDADO: " + error.message;
+            }
+        }
+        testFirebase();
+    </script>
+</body>
+</html>

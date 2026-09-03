@@ -447,7 +447,12 @@ function renderAdminView() {
                     <td style="padding: 15px;"><strong>${app.clientName || 'Cliente'}</strong><br><small>${app.clientPhone}</small></td>
                     <td style="padding: 15px;">${serviceName} ${isAdmin ? `<br><small>${profName}</small>` : ''}</td>
                     <td style="padding: 15px;">
-                        <span style="background: #e8f5e9; color: #4CAF50; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;">${(app.status || 'confirmada').toUpperCase()}</span>
+                        <select class="status-selector" data-appid="${app.id}" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc; font-size: 0.85rem; outline: none; background: #e8f5e9; color: #2e7d32; font-weight: bold; cursor:pointer;">
+                            <option value="confirmada" ${(app.status || 'confirmada') === 'confirmada' ? 'selected' : ''}>CONFIRMADA</option>
+                            <option value="completada" ${app.status === 'completada' ? 'selected' : ''}>COMPLETADA</option>
+                            <option value="cancelada" ${app.status === 'cancelada' ? 'selected' : ''}>CANCELADA</option>
+                            <option value="no asiste" ${app.status === 'no asiste' ? 'selected' : ''}>NO ASISTE</option>
+                        </select>
                     </td>
                     <td style="padding: 15px;">
                         ${!isFichaDone ? `<button class="btn btn-outline btn-sm btn-ficha" data-appid="${app.id}">Crear Ficha</button>` : `<span style="color: #4CAF50;"><i data-lucide="check-circle" style="width:16px; display:inline; vertical-align:middle;"></i> Ficha Lista</span>`}
@@ -458,11 +463,19 @@ function renderAdminView() {
     }
 
     // Tabla de Fichas
+    let myFichas = fichas;
+    if (!isAdmin) {
+        myFichas = fichas.filter(f => {
+            const appointment = appointments.find(a => a.id === f.appointmentId);
+            return appointment && (appointment.profesional === auth.user.name || appointment.profId === auth.user.id);
+        });
+    }
+
     let fichasRows = '';
-    if (fichas.length === 0) {
+    if (myFichas.length === 0) {
         fichasRows = `<tr><td colspan="5" class="text-center" style="padding: 20px;">No hay fichas registradas.</td></tr>`;
     } else {
-        fichas.forEach(f => {
+        myFichas.forEach(f => {
             fichasRows += `
                 <tr style="border-bottom: 1px solid var(--clr-nude);">
                     <td style="padding: 15px;">${f.date}</td>

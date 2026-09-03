@@ -395,6 +395,41 @@ function initAdminEvents() {
         });
     });
 
+    // Selectores de estado de Citas
+    const statusSelectors = document.querySelectorAll('.status-selector');
+    statusSelectors.forEach(select => {
+        // Inicializar color según el estado actual
+        const val = select.value;
+        if(val === 'cancelada' || val === 'no asiste') {
+            select.style.background = '#ffebee';
+            select.style.color = '#c62828';
+        } else if (val === 'completada') {
+            select.style.background = '#e3f2fd';
+            select.style.color = '#1565c0';
+        } else {
+            select.style.background = '#e8f5e9';
+            select.style.color = '#2e7d32';
+        }
+
+        select.addEventListener('change', async (e) => {
+            const appId = e.target.getAttribute('data-appid');
+            const newStatus = e.target.value;
+            
+            if(newStatus === 'cancelada' || newStatus === 'no asiste') {
+                e.target.style.background = '#ffebee';
+                e.target.style.color = '#c62828';
+            } else if (newStatus === 'completada') {
+                e.target.style.background = '#e3f2fd';
+                e.target.style.color = '#1565c0';
+            } else {
+                e.target.style.background = '#e8f5e9';
+                e.target.style.color = '#2e7d32';
+            }
+            
+            await StorageHelper.updateAppointmentStatus(appId, newStatus);
+        });
+    });
+
     // Modal de Creación de Ficha
     const btnFichas = document.querySelectorAll('.btn-ficha');
     const fichaModal = document.getElementById('ficha-modal');

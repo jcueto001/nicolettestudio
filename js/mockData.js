@@ -289,6 +289,20 @@ const StorageHelper = {
         }
     },
 
+    updateAppointmentStatus: async function(id, newStatus) {
+        if(typeof db !== 'undefined') {
+            try {
+                await db.collection("appointments").doc(id).update({ status: newStatus });
+                const appIdx = this._appointmentsCache.findIndex(a => a.id === id);
+                if (appIdx > -1) {
+                    this._appointmentsCache[appIdx].status = newStatus;
+                }
+            } catch (e) {
+                console.error("Error updating appointment status", e);
+            }
+        }
+    },
+
     // Professionals
     getProfessionals: function() {
         return this._professionalsCache;

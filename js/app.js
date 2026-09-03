@@ -441,12 +441,34 @@ function renderAdminView() {
             const serviceName = app.servicio || mockData.services.find(s => s.id === app.serviceId)?.name || 'Servicio';
             const profName = app.profesional || professionals.find(p => p.id === app.profId)?.name || 'Prof.';
             const isFichaDone = fichas.some(f => f.appointmentId === app.id);
+            
+            let needsHtml = '';
+            if (app.needs) {
+                const tags = [];
+                if (app.needs.kids) tags.push('Ir con Niños');
+                if (app.needs.time) tags.push('Poco tiempo');
+                if (app.needs.event) tags.push('Evento especial');
+                if (tags.length > 0) {
+                    needsHtml = `<div style="margin-top: 5px; display: flex; gap: 5px; flex-wrap: wrap;">
+                        ${tags.map(t => `<span style="background: var(--clr-nude-light); color: var(--clr-rose-gold-dark); padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold;">${t}</span>`).join('')}
+                    </div>`;
+                }
+            }
+
+            let notesHtml = '';
+            if (app.notes && app.notes.trim() !== '') {
+                notesHtml = `<div style="margin-top: 5px; font-size: 0.8rem; color: var(--clr-neutral-gray); font-style: italic; border-left: 2px solid var(--clr-rose-gold); padding-left: 5px;">"${app.notes}"</div>`;
+            }
 
             agendaRows += `
                 <tr style="border-bottom: 1px solid var(--clr-nude);">
                     <td style="padding: 15px;">${app.date} <br><strong style="color: var(--clr-rose-gold-dark);">${app.time}</strong></td>
                     <td style="padding: 15px;"><strong>${app.clientName || 'Cliente'}</strong><br><small>${app.clientPhone}</small></td>
-                    <td style="padding: 15px;">${serviceName} ${isAdmin ? `<br><small>${profName}</small>` : ''}</td>
+                    <td style="padding: 15px;">
+                        ${serviceName} ${isAdmin ? `<br><small>${profName}</small>` : ''}
+                        ${needsHtml}
+                        ${notesHtml}
+                    </td>
                     <td style="padding: 15px;">
                         <select class="status-selector" data-appid="${app.id}" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc; font-size: 0.85rem; outline: none; background: #e8f5e9; color: #2e7d32; font-weight: bold; cursor:pointer;">
                             <option value="confirmada" ${(app.status || 'confirmada') === 'confirmada' ? 'selected' : ''}>CONFIRMADA</option>

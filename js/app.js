@@ -237,6 +237,7 @@ function renderGaleriaView() {
 }
 
 function renderAgendarView() {
+    const professionals = StorageHelper.getProfessionals();
     return `
         <div class="container section">
             <div class="section-header">
@@ -284,10 +285,10 @@ function renderAgendarView() {
                 <div id="booking-step-2" class="booking-step" style="display: none;">
                     <h3 style="margin-bottom: 20px;">2. Selecciona un Profesional</h3>
                     <div class="prof-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px;">
-                        ${mockData.professionals.map(p => `
+                        ${professionals.map(p => `
                             <div class="prof-select-card card text-center" data-prof-id="${p.id}" style="cursor: pointer; border: 2px solid transparent;">
-                                <img src="${p.avatar}" alt="${p.name}" style="width: 80px; height: 80px; border-radius: 50%; margin-bottom: 15px; object-fit: cover;">
-                                <h4>${p.name}</h4>
+                                <img src="${p.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80'}" alt="${p.name || 'Profesional'}" style="width: 80px; height: 80px; border-radius: 50%; margin-bottom: 15px; object-fit: cover;">
+                                <h4>${p.name || 'Sin Nombre'}</h4>
                             </div>
                         `).join('')}
                     </div>

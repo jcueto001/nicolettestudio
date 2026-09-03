@@ -200,7 +200,7 @@ const StorageHelper = {
     getAvailableTimeSlots: async function(date, profId) {
         if(typeof db === 'undefined') return mockData.timeSlots;
         
-        const prof = mockData.professionals.find(p => p.id === profId);
+        const prof = this.getProfessionals().find(p => p.id === profId);
         const profName = prof ? prof.name : profId;
 
         try {

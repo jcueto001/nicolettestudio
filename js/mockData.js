@@ -162,6 +162,7 @@ const StorageHelper = {
 
     loadAppointmentsCache: async function() {
         if(typeof db === 'undefined') return;
+        
         try {
             const querySnapshot = await db.collection("appointments").get();
             const appointments = [];
@@ -169,32 +170,42 @@ const StorageHelper = {
                 appointments.push({ id: doc.id, ...doc.data() });
             });
             this._appointmentsCache = appointments;
-            
+        } catch(e) { console.error("Error cargando appointments:", e); }
+        
+        try {
             const fichasSnapshot = await db.collection("fichas").get();
             const fichas = [];
             fichasSnapshot.forEach((doc) => {
                 fichas.push({ id: doc.id, ...doc.data() });
             });
             this._fichasCache = fichas;
-            
+        } catch(e) { console.error("Error cargando fichas:", e); }
+        
+        try {
             const profsSnapshot = await db.collection("professionals").get();
             const profs = [];
             profsSnapshot.forEach((doc) => {
                 profs.push({ id: doc.id, ...doc.data() });
             });
             this._professionalsCache = profs.length > 0 ? profs : mockData.professionals;
-            
+        } catch(e) { 
+            console.error("Error cargando profesionales:", e); 
+            if(this._professionalsCache.length === 0) this._professionalsCache = mockData.professionals;
+        }
+        
+        try {
             const invSnapshot = await db.collection("inventory").get();
             const inv = [];
             invSnapshot.forEach((doc) => {
                 inv.push({ id: doc.id, ...doc.data() });
             });
             this._inventoryCache = inv.length > 0 ? inv : mockData.inventory;
-
-            this._refreshAdminIfSafe();
-        } catch (e) {
-            console.error("Error cargando datos de Firebase:", e);
+        } catch(e) { 
+            console.error("Error cargando inventario:", e); 
+            if(this._inventoryCache.length === 0) this._inventoryCache = mockData.inventory;
         }
+
+        this._refreshAdminIfSafe();
     },
 
     getAvailableTimeSlots: async function(date, profId) {

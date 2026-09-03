@@ -330,7 +330,8 @@ function initAgendarEvents() {
         
         // Llenar resumen final
         const s = mockData.services.find(x => x.id === bookingState.serviceId);
-        const p = mockData.professionals.find(x => x.id === bookingState.profId);
+        const professionals = StorageHelper.getProfessionals();
+        const p = professionals.find(x => x.id === bookingState.profId);
         
         document.getElementById('summary-client').innerText = bookingState.clientName;
         document.getElementById('summary-service').innerText = s ? s.name : '';
@@ -352,13 +353,16 @@ function initAgendarEvents() {
         btnConfirm.disabled = true;
         btnConfirm.innerHTML = 'Procesando...';
 
-        const prof = mockData.professionals.find(p => p.id === bookingState.profId);
+        const professionals = StorageHelper.getProfessionals();
+        const prof = professionals.find(p => p.id === bookingState.profId);
         const service = mockData.services.find(s => s.id === bookingState.serviceId);
 
         // Guardar cita
         const appointmentData = {
             servicio: service ? service.name : bookingState.serviceId,
             profesional: prof ? prof.name : bookingState.profId,
+            profId: bookingState.profId,
+            serviceId: bookingState.serviceId,
             date: bookingState.date,
             time: bookingState.time,
             needs: bookingState.needs,

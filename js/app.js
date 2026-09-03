@@ -447,7 +447,7 @@ function renderAdminView() {
                     <td style="padding: 15px;"><strong>${app.clientName || 'Cliente'}</strong><br><small>${app.clientPhone}</small></td>
                     <td style="padding: 15px;">${serviceName} ${isAdmin ? `<br><small>${profName}</small>` : ''}</td>
                     <td style="padding: 15px;">
-                        <span style="background: #e8f5e9; color: #4CAF50; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;">${app.status.toUpperCase()}</span>
+                        <span style="background: #e8f5e9; color: #4CAF50; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;">${(app.status || 'confirmada').toUpperCase()}</span>
                     </td>
                     <td style="padding: 15px;">
                         ${!isFichaDone ? `<button class="btn btn-outline btn-sm btn-ficha" data-appid="${app.id}">Crear Ficha</button>` : `<span style="color: #4CAF50;"><i data-lucide="check-circle" style="width:16px; display:inline; vertical-align:middle;"></i> Ficha Lista</span>`}
@@ -495,10 +495,10 @@ function renderAdminView() {
         profRows += `
             <tr style="border-bottom: 1px solid var(--clr-nude);">
                 <td style="padding: 15px; display:flex; align-items:center; gap:10px;">
-                    <img src="${p.avatar}" style="width:30px; height:30px; border-radius:50%; object-fit:cover;">
-                    ${p.name}
+                    <img src="${p.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80'}" style="width:30px; height:30px; border-radius:50%; object-fit:cover;">
+                    ${p.name || 'Sin Nombre'}
                 </td>
-                <td style="padding: 15px;">${p.role.toUpperCase()}</td>
+                <td style="padding: 15px;">${(p.role || 'profesional').toUpperCase()}</td>
                 <td style="padding: 15px;">
                     ${isAdmin && p.id !== auth.user.id ? `<button class="btn btn-outline btn-sm btn-del-prof" style="color:red; border-color:red;" data-profid="${p.id}"><i data-lucide="trash-2"></i></button>` : ''}
                 </td>

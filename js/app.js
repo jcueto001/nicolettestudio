@@ -19,11 +19,7 @@ const AppRouter = {
                 const route = e.currentTarget.getAttribute('data-route');
                 this.navigate(route);
 
-                // Actualizar clase activa en el menú desktop
-                if (e.currentTarget.classList.contains('nav-link')) {
-                    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-                    e.currentTarget.classList.add('active');
-                }
+                // El estado activo ahora se maneja dentro de navigate()
 
                 // Cerrar menú móvil si está abierto
                 const navLinks = document.getElementById('nav-links');
@@ -41,6 +37,15 @@ const AppRouter = {
         const contentArea = document.getElementById('app-content');
         if (this.routes[route]) {
             if (this._navTimeout) clearTimeout(this._navTimeout);
+
+            // Actualizar clase activa en el menú de navegación
+            document.querySelectorAll('.nav-link').forEach(link => {
+                if (link.getAttribute('data-route') === route) {
+                    link.classList.add('active');
+                } else {
+                    link.classList.remove('active');
+                }
+            });
 
             // Animación de salida (opcional)
             contentArea.style.opacity = '0';
@@ -405,7 +410,6 @@ function renderAgendarView() {
                 <div class="card text-center" style="max-width: 400px; width: 90%;">
                     <i data-lucide="party-popper" style="color: var(--clr-rose-gold); width: 60px; height: 60px; margin-bottom: 20px;"></i>
                     <h3 style="margin-bottom: 15px;">¡Cita Agendada!</h3>
-                    <p style="color: var(--clr-neutral-gray); margin-bottom: 25px;">¡Ganaste 50 Fantasy Points!</p>
                     <button class="btn btn-primary btn-block" onclick="document.getElementById('success-modal').style.display='none'; AppRouter.navigate('home')">Volver al Inicio</button>
                 </div>
             </div>
@@ -568,14 +572,14 @@ function renderAdminView() {
                 <div style="font-weight:bold; color:var(--clr-rose-gold);">${auth.user.name}</div>
             </div>
             
-            <div class="tabs-container" style="display:flex; gap:10px; margin-bottom:20px; border-bottom:1px solid #ddd;">
-                <button class="admin-tab active" data-target="tab-agenda" style="background:none; border:none; padding:10px 20px; cursor:pointer; border-bottom:3px solid var(--clr-rose-gold); font-weight:bold; color:var(--clr-neutral-dark);">Agenda</button>
-                <button class="admin-tab" data-target="tab-fichas" style="background:none; border:none; padding:10px 20px; cursor:pointer; border-bottom:3px solid transparent; color:var(--clr-neutral-gray);">Fichas Clínicas</button>
+            <div class="tabs-container" style="display:flex; gap:10px; margin-bottom:20px; border-bottom:1px solid #ddd; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; -webkit-overflow-scrolling: touch;">
+                <button class="admin-tab active" data-target="tab-agenda" style="background:none; border:none; padding:10px 20px; cursor:pointer; border-bottom:3px solid var(--clr-rose-gold); font-weight:bold; color:var(--clr-neutral-dark); flex-shrink: 0;">Agenda</button>
+                <button class="admin-tab" data-target="tab-fichas" style="background:none; border:none; padding:10px 20px; cursor:pointer; border-bottom:3px solid transparent; color:var(--clr-neutral-gray); flex-shrink: 0;">Fichas Clínicas</button>
                 ${isAdmin ? `
-                <button class="admin-tab" data-target="tab-clientas" style="background:none; border:none; padding:10px 20px; cursor:pointer; border-bottom:3px solid transparent; color:var(--clr-neutral-gray);">Directorio Clientas</button>
-                <button class="admin-tab" data-target="tab-inventario" style="background:none; border:none; padding:10px 20px; cursor:pointer; border-bottom:3px solid transparent; color:var(--clr-neutral-gray);">Inventario</button>
-                <button class="admin-tab" data-target="tab-profs" style="background:none; border:none; padding:10px 20px; cursor:pointer; border-bottom:3px solid transparent; color:var(--clr-neutral-gray);">Trabajadoras</button>
-                <button class="admin-tab" data-target="tab-galeria" style="background:none; border:none; padding:10px 20px; cursor:pointer; border-bottom:3px solid transparent; color:var(--clr-neutral-gray);">Galería</button>
+                <button class="admin-tab" data-target="tab-clientas" style="background:none; border:none; padding:10px 20px; cursor:pointer; border-bottom:3px solid transparent; color:var(--clr-neutral-gray); flex-shrink: 0;">Directorio Clientas</button>
+                <button class="admin-tab" data-target="tab-inventario" style="background:none; border:none; padding:10px 20px; cursor:pointer; border-bottom:3px solid transparent; color:var(--clr-neutral-gray); flex-shrink: 0;">Inventario</button>
+                <button class="admin-tab" data-target="tab-profs" style="background:none; border:none; padding:10px 20px; cursor:pointer; border-bottom:3px solid transparent; color:var(--clr-neutral-gray); flex-shrink: 0;">Trabajadoras</button>
+                <button class="admin-tab" data-target="tab-galeria" style="background:none; border:none; padding:10px 20px; cursor:pointer; border-bottom:3px solid transparent; color:var(--clr-neutral-gray); flex-shrink: 0;">Galería</button>
                 ` : ''}
             </div>
 
@@ -583,7 +587,7 @@ function renderAdminView() {
             <div id="tab-agenda" class="admin-tab-content">
                 <div class="card" style="padding: 0; overflow: hidden;">
                     <div style="overflow-x: auto;">
-                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <table style="width: 100%; min-width: 600px; white-space: nowrap; border-collapse: collapse; text-align: left;">
                             <thead>
                                 <tr style="background: var(--clr-nude-light); color: var(--clr-neutral-dark);">
                                     <th style="padding: 15px;">Fecha / Hora</th>
@@ -606,7 +610,7 @@ function renderAdminView() {
                 </div>
                 <div class="card" style="padding: 0; overflow: hidden;">
                     <div style="overflow-x: auto;">
-                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <table style="width: 100%; min-width: 600px; white-space: nowrap; border-collapse: collapse; text-align: left;">
                             <thead>
                                 <tr style="background: var(--clr-nude-light); color: var(--clr-neutral-dark);">
                                     <th style="padding: 15px;">Fecha</th>
@@ -629,7 +633,7 @@ function renderAdminView() {
                 </div>
                 <div class="card" style="padding: 0; overflow: hidden;">
                     <div style="overflow-x: auto;">
-                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <table style="width: 100%; min-width: 600px; white-space: nowrap; border-collapse: collapse; text-align: left;">
                             <thead>
                                 <tr style="background: var(--clr-nude-light); color: var(--clr-neutral-dark);">
                                     <th style="padding: 15px;">Producto</th>
@@ -650,7 +654,7 @@ function renderAdminView() {
                 </div>
                 <div class="card" style="padding: 0; overflow: hidden;">
                     <div style="overflow-x: auto;">
-                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <table style="width: 100%; min-width: 600px; white-space: nowrap; border-collapse: collapse; text-align: left;">
                             <thead>
                                 <tr style="background: var(--clr-nude-light); color: var(--clr-neutral-dark);">
                                     <th style="padding: 15px;">Clienta</th>
@@ -672,7 +676,7 @@ function renderAdminView() {
                 </div>
                 <div class="card" style="padding: 0; overflow: hidden;">
                     <div style="overflow-x: auto;">
-                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <table style="width: 100%; min-width: 600px; white-space: nowrap; border-collapse: collapse; text-align: left;">
                             <thead>
                                 <tr style="background: var(--clr-nude-light); color: var(--clr-neutral-dark);">
                                     <th style="padding: 15px;">Nombre</th>

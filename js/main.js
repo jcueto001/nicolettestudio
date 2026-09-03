@@ -41,12 +41,17 @@ function setupAuth() {
     
     if(btnLogout) {
         btnLogout.addEventListener('click', async () => {
-            if (typeof firebase !== 'undefined' && firebase.auth) {
-                await firebase.auth().signOut();
-            } else {
+            if (confirm('¿Seguro quieres salir?')) {
+                // Forzar actualización inmediata del localStorage
                 StorageHelper.setAuth({ loggedIn: false, user: null });
                 updateNav();
-                AppRouter.navigate('home');
+                
+                if (typeof firebase !== 'undefined' && firebase.auth) {
+                    await firebase.auth().signOut();
+                }
+                if (typeof AppRouter !== 'undefined') {
+                    AppRouter.navigate('home');
+                }
             }
         });
     }
@@ -57,9 +62,7 @@ function setupAuth() {
         adminLink.addEventListener('click', (e) => {
             const auth = StorageHelper.getAuth();
             if(!auth.loggedIn) {
-                e.stopImmediatePropagation(); // Evitar absolutamente que AppRouter navegue
-                e.preventDefault();
-                // Solo mostrar modal
+                // Solo mostramos el modal, pero dejamos que AppRouter navegue a la vista 'admin'
                 authModal.style.display = 'flex';
             }
         }, true); // Fase de captura para ejecutar antes que AppRouter
@@ -83,11 +86,24 @@ function setupAuth() {
                 if (typeof firebase === 'undefined' || !firebase.auth) {
                     throw new Error("Firebase Auth no está inicializado");
                 }
-                await firebase.auth().signInWithEmailAndPassword(email, password);
+                const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
                 
-                // Si el login es exitoso, el onAuthStateChanged en mockData.js
-                // se encargará de configurar StorageHelper, actualizar nav y navegar a 'admin'
+                // Actualizar estado inmediatamente para que el renderizado de admin no falle
+                const userEmail = userCredential.user.email;
+                const profs = StorageHelper.getProfessionals();
+                const prof = profs.find(p => p.email === userEmail) || { id: 'p_unknown', name: 'Admin', role: 'admin' };
+                StorageHelper.setAuth({ loggedIn: true, user: prof });
+                
+                // Actualizar UI
+                const btnLogout = document.getElementById('btn-logout');
+                if (btnLogout) btnLogout.style.display = 'inline-block';
+
                 document.getElementById('auth-modal').style.display = 'none';
+                
+                // Navegar directo al portal interno
+                if (typeof AppRouter !== 'undefined') {
+                    AppRouter.navigate('admin');
+                }
                 
             } catch (error) {
                 console.error("Error Auth:", error);
@@ -375,6 +391,10 @@ function initAgendarEvents() {
         try {
             await StorageHelper.saveAppointment(appointmentData);
             document.getElementById('success-modal').style.display = 'flex';
+            setTimeout(() => {
+                document.getElementById('success-modal').style.display = 'none';
+                if (typeof AppRouter !== 'undefined') AppRouter.navigate('home');
+            }, 3000);
         } catch (e) {
             alert('Error al guardar la cita. Intenta de nuevo.');
             btnConfirm.disabled = false;
@@ -600,7 +620,7 @@ function initAdminEvents() {
         btnSubmit.innerText = "Guardar Ficha";
         
         if(typeof AppRouter !== 'undefined') {
-            AppRouter.navigate('admin'); // Refrescar vista
+            AppRouter.navigate('home'); // Refrescar vista
         }
     });
 
@@ -670,7 +690,7 @@ function initAdminEvents() {
         btn.addEventListener('click', () => {
             if(confirm('¿Estás segura de eliminar esta ficha clínica? Esta acción no se puede deshacer.')) {
                 StorageHelper.deleteFicha(btn.getAttribute('data-fichaid'));
-                AppRouter.navigate('admin');
+                AppRouter.navigate('home');
             }
         });
     });
@@ -680,7 +700,7 @@ function initAdminEvents() {
         btn.addEventListener('click', () => {
             if(confirm('¿Estás segura de eliminar a esta trabajadora del sistema?')) {
                 StorageHelper.deleteProfessional(btn.getAttribute('data-profid'));
-                AppRouter.navigate('admin');
+                AppRouter.navigate('home');
             }
         });
     });
@@ -729,7 +749,7 @@ function initAdminEvents() {
                                 title: titleInput.value.trim(),
                                 src: dataUrl
                             });
-                            AppRouter.navigate('admin'); // Recargar para ver los cambios
+                            AppRouter.navigate('home'); // Recargar para ver los cambios
                         } catch(err) {
                             alert("Error: No hay más espacio en la memoria. Por favor, elimina algunas fotos de la galería primero.");
                             statusGallery.style.display = 'none';
@@ -749,7 +769,7 @@ function initAdminEvents() {
         btn.addEventListener('click', async () => {
             if(confirm('¿Estás segura de eliminar permanentemente esta ficha?')) {
                 await StorageHelper.deleteFicha(btn.getAttribute('data-fichaid'));
-                if (typeof AppRouter !== 'undefined') AppRouter.navigate('admin');
+                if (typeof AppRouter !== 'undefined') AppRouter.navigate('home');
             }
         });
     });
@@ -759,7 +779,7 @@ function initAdminEvents() {
         btn.addEventListener('click', () => {
             if(confirm('¿Estás segura de eliminar esta imagen de la galería pública?')) {
                 StorageHelper.deleteGalleryImage(btn.getAttribute('data-id'));
-                AppRouter.navigate('admin');
+                AppRouter.navigate('home');
             }
         });
     });
@@ -832,7 +852,7 @@ function initAdminEvents() {
                     btnSave.disabled = false;
                     status.style.display = 'none';
                     formWorker.reset();
-                    if (typeof AppRouter !== 'undefined') AppRouter.navigate('admin');
+                    if (typeof AppRouter !== 'undefined') AppRouter.navigate('home');
                 };
                 img.src = event.target.result;
             };
@@ -877,7 +897,7 @@ function initAdminEvents() {
             
             clientModal.style.display = 'none';
             formClient.reset();
-            if (typeof AppRouter !== 'undefined') AppRouter.navigate('admin');
+            if (typeof AppRouter !== 'undefined') AppRouter.navigate('home');
         });
     }
 
@@ -886,7 +906,7 @@ function initAdminEvents() {
         btn.addEventListener('click', () => {
             if(confirm('¿Estás segura de eliminar este registro del directorio de clientas?')) {
                 StorageHelper.deleteClient(btn.getAttribute('data-id'));
-                if (typeof AppRouter !== 'undefined') AppRouter.navigate('admin');
+                if (typeof AppRouter !== 'undefined') AppRouter.navigate('home');
             }
         });
     });
@@ -930,7 +950,7 @@ function initAdminEvents() {
             btnSave.disabled = false;
             btnSave.innerText = "Guardar Producto";
             formProduct.reset();
-            if (typeof AppRouter !== 'undefined') AppRouter.navigate('admin');
+            if (typeof AppRouter !== 'undefined') AppRouter.navigate('home');
         });
     }
 }

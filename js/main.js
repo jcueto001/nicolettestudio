@@ -148,21 +148,36 @@ function initAgendarEvents() {
         });
     });
     
-    btnNext1?.addEventListener('click', () => showStep(2));
+    btnNext1?.addEventListener('click', () => {
+        // Re-render prof-grid just in case data loaded late
+        const profGrid = document.querySelector('.prof-grid');
+        const btnNext2 = document.getElementById('btn-next-2');
+        if (profGrid) {
+            const professionals = StorageHelper.getProfessionals();
+            profGrid.innerHTML = professionals.map(p => `
+                <div class="prof-select-card card text-center" data-prof-id="${p.id}" style="cursor: pointer; border: 2px solid transparent;">
+                    <img src="${p.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=150&q=80'}" alt="${p.name || 'Profesional'}" style="width: 80px; height: 80px; border-radius: 50%; margin-bottom: 15px; object-fit: cover;">
+                    <h4>${p.name || 'Sin Nombre'}</h4>
+                </div>
+            `).join('');
+
+            // Re-bind events
+            const profCards = document.querySelectorAll('.prof-select-card');
+            profCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    profCards.forEach(c => c.style.borderColor = 'transparent');
+                    card.style.borderColor = 'var(--clr-rose-gold)';
+                    bookingState.profId = card.getAttribute('data-prof-id');
+                    if (btnNext2) btnNext2.disabled = false;
+                });
+            });
+        }
+        showStep(2);
+    });
 
     // Step 2: Professional
-    const profCards = document.querySelectorAll('.prof-select-card');
     const btnNext2 = document.getElementById('btn-next-2');
     const btnPrev2 = document.getElementById('btn-prev-2');
-    
-    profCards.forEach(card => {
-        card.addEventListener('click', () => {
-            profCards.forEach(c => c.style.borderColor = 'transparent');
-            card.style.borderColor = 'var(--clr-rose-gold)';
-            bookingState.profId = card.getAttribute('data-prof-id');
-            btnNext2.disabled = false;
-        });
-    });
 
     btnPrev2?.addEventListener('click', () => showStep(1));
     btnNext2?.addEventListener('click', () => {

@@ -525,6 +525,22 @@ function initAdminEvents() {
         
         await StorageHelper.saveFicha(ficha);
         
+        // Actualizar o crear clienta
+        const clientsList = StorageHelper.getClients();
+        let existingClient = clientsList.find(c => c.name.toLowerCase() === clientName.toLowerCase());
+        if(existingClient) {
+            existingClient.lastVisit = ficha.date;
+            StorageHelper.updateClient(existingClient);
+        } else {
+            let prodNames = usedProds.map(p => p.name).join(', ');
+            StorageHelper.addClient({
+                name: clientName,
+                phone: app ? app.clientPhone : '',
+                lastVisit: ficha.date,
+                products: prodNames ? `Productos usados: ${prodNames}` : ''
+            });
+        }
+        
         fichaModal.style.display = 'none';
         btnSubmit.disabled = false;
         btnSubmit.innerText = "Guardar Ficha";
@@ -693,4 +709,162 @@ function initAdminEvents() {
             }
         });
     });
+
+    // --- Lógica de Nueva Trabajadora ---
+    const btnAddWorker = document.getElementById('btn-add-worker');
+    const workerModal = document.getElementById('worker-modal');
+    const closeWorker = document.getElementById('close-worker');
+    const formWorker = document.getElementById('form-worker');
+    
+    if(btnAddWorker) {
+        btnAddWorker.addEventListener('click', () => {
+            if(workerModal) workerModal.style.display = 'flex';
+        });
+    }
+    
+    if(closeWorker) {
+        closeWorker.addEventListener('click', () => {
+            workerModal.style.display = 'none';
+        });
+    }
+
+    if(formWorker) {
+        formWorker.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('worker-name').value.trim();
+            const email = document.getElementById('worker-email').value.trim();
+            const photoInput = document.getElementById('worker-photo');
+            const btnSave = document.getElementById('btn-save-worker');
+            const status = document.getElementById('worker-upload-status');
+            
+            btnSave.disabled = true;
+            status.style.display = 'block';
+
+            let reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = async function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const MAX = 400; // Avatar pequeño
+                    if (width > MAX) { height = Math.round(height * (MAX / width)); width = MAX; }
+                    canvas.width = width; canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                    
+                    await StorageHelper.addProfessional({
+                        name: name,
+                        email: email,
+                        role: 'profesional',
+                        avatar: dataUrl
+                    });
+                    
+                    workerModal.style.display = 'none';
+                    btnSave.disabled = false;
+                    status.style.display = 'none';
+                    formWorker.reset();
+                    if (typeof AppRouter !== 'undefined') AppRouter.navigate('admin');
+                };
+                img.src = event.target.result;
+            };
+            
+            if(photoInput.files && photoInput.files[0]) {
+                reader.readAsDataURL(photoInput.files[0]);
+            }
+        });
+    }
+
+    // --- Lógica de Nueva Clienta ---
+    const btnAddClient = document.getElementById('btn-add-client');
+    const clientModal = document.getElementById('client-modal');
+    const closeClient = document.getElementById('close-client');
+    const formClient = document.getElementById('form-client');
+    
+    if(btnAddClient) {
+        btnAddClient.addEventListener('click', () => {
+            if(clientModal) clientModal.style.display = 'flex';
+        });
+    }
+    
+    if(closeClient) {
+        closeClient.addEventListener('click', () => {
+            clientModal.style.display = 'none';
+        });
+    }
+
+    if(formClient) {
+        formClient.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('client-name-input').value.trim();
+            const phone = document.getElementById('client-phone-input').value.trim();
+            const products = document.getElementById('client-products').value.trim();
+            
+            StorageHelper.addClient({
+                name,
+                phone,
+                lastVisit: '',
+                products
+            });
+            
+            clientModal.style.display = 'none';
+            formClient.reset();
+            if (typeof AppRouter !== 'undefined') AppRouter.navigate('admin');
+        });
+    }
+
+    // Eliminar Clienta
+    document.querySelectorAll('.btn-del-client').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if(confirm('¿Estás segura de eliminar este registro del directorio de clientas?')) {
+                StorageHelper.deleteClient(btn.getAttribute('data-id'));
+                if (typeof AppRouter !== 'undefined') AppRouter.navigate('admin');
+            }
+        });
+    });
+
+    // --- Lógica de Nuevo Producto ---
+    const btnAddProduct = document.getElementById('btn-add-product');
+    const productModal = document.getElementById('product-modal');
+    const closeProduct = document.getElementById('close-product');
+    const formProduct = document.getElementById('form-product');
+    
+    if(btnAddProduct) {
+        btnAddProduct.addEventListener('click', () => {
+            if(productModal) productModal.style.display = 'flex';
+        });
+    }
+    
+    if(closeProduct) {
+        closeProduct.addEventListener('click', () => {
+            productModal.style.display = 'none';
+        });
+    }
+
+    if(formProduct) {
+        formProduct.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('prod-name').value.trim();
+            const cat = document.getElementById('prod-cat').value;
+            const stock = parseInt(document.getElementById('prod-stock').value);
+            const btnSave = document.getElementById('btn-save-product');
+            
+            btnSave.disabled = true;
+            btnSave.innerText = "Guardando...";
+            
+            await StorageHelper.addProduct({
+                name: name,
+                category: cat,
+                stock: stock
+            });
+            
+            productModal.style.display = 'none';
+            btnSave.disabled = false;
+            btnSave.innerText = "Guardar Producto";
+            formProduct.reset();
+            if (typeof AppRouter !== 'undefined') AppRouter.navigate('admin');
+        });
+    }
 }

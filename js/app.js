@@ -420,6 +420,7 @@ function renderAdminView() {
     const inventory = StorageHelper.getInventory();
     const professionals = StorageHelper.getProfessionals();
     const fichas = StorageHelper.getFichas();
+    const clientsList = StorageHelper.getClients();
 
     // Filtramos la agenda según el rol
     let myAppointments = appointments;
@@ -502,6 +503,25 @@ function renderAdminView() {
         `;
     });
 
+    // Tabla Clientas
+    let clientRows = '';
+    if (clientsList.length === 0) {
+        clientRows = `<tr><td colspan="4" class="text-center" style="padding: 20px;">No hay clientas en el directorio.</td></tr>`;
+    } else {
+        clientsList.forEach(c => {
+            clientRows += `
+                <tr style="border-bottom: 1px solid var(--clr-nude);">
+                    <td style="padding: 15px;"><strong>${c.name}</strong><br><small>${c.phone || ''}</small></td>
+                    <td style="padding: 15px;">${c.lastVisit || 'Sin registro'}</td>
+                    <td style="padding: 15px;">${c.products || 'N/A'}</td>
+                    <td style="padding: 15px;">
+                        <button class="btn btn-outline btn-sm btn-del-client" style="color:red; border-color:red;" data-id="${c.id}"><i data-lucide="trash-2"></i></button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
     return `
         <div class="container section">
             <div class="section-header" style="margin-bottom: 30px; display:flex; justify-content: space-between; align-items:center;">
@@ -513,6 +533,7 @@ function renderAdminView() {
                 <button class="admin-tab active" data-target="tab-agenda" style="background:none; border:none; padding:10px 20px; cursor:pointer; border-bottom:3px solid var(--clr-rose-gold); font-weight:bold; color:var(--clr-neutral-dark);">Agenda</button>
                 <button class="admin-tab" data-target="tab-fichas" style="background:none; border:none; padding:10px 20px; cursor:pointer; border-bottom:3px solid transparent; color:var(--clr-neutral-gray);">Fichas Clínicas</button>
                 ${isAdmin ? `
+                <button class="admin-tab" data-target="tab-clientas" style="background:none; border:none; padding:10px 20px; cursor:pointer; border-bottom:3px solid transparent; color:var(--clr-neutral-gray);">Directorio Clientas</button>
                 <button class="admin-tab" data-target="tab-inventario" style="background:none; border:none; padding:10px 20px; cursor:pointer; border-bottom:3px solid transparent; color:var(--clr-neutral-gray);">Inventario</button>
                 <button class="admin-tab" data-target="tab-profs" style="background:none; border:none; padding:10px 20px; cursor:pointer; border-bottom:3px solid transparent; color:var(--clr-neutral-gray);">Trabajadoras</button>
                 <button class="admin-tab" data-target="tab-galeria" style="background:none; border:none; padding:10px 20px; cursor:pointer; border-bottom:3px solid transparent; color:var(--clr-neutral-gray);">Galería</button>
@@ -563,7 +584,10 @@ function renderAdminView() {
 
             ${isAdmin ? `
             <!-- Tab Inventario -->
-            <div id="tab-inv" class="admin-tab-content" style="display:none;">
+            <div id="tab-inventario" class="admin-tab-content" style="display:none;">
+                <div style="display:flex; justify-content:flex-end; margin-bottom: 15px;">
+                    <button class="btn btn-primary" id="btn-add-product"><i data-lucide="plus"></i> Añadir Producto</button>
+                </div>
                 <div class="card" style="padding: 0; overflow: hidden;">
                     <div style="overflow-x: auto;">
                         <table style="width: 100%; border-collapse: collapse; text-align: left;">
@@ -580,8 +604,33 @@ function renderAdminView() {
                 </div>
             </div>
 
+            <!-- Tab Clientas -->
+            <div id="tab-clientas" class="admin-tab-content" style="display:none;">
+                <div style="display:flex; justify-content:flex-end; margin-bottom: 15px;">
+                    <button class="btn btn-primary" id="btn-add-client"><i data-lucide="plus"></i> Añadir Clienta</button>
+                </div>
+                <div class="card" style="padding: 0; overflow: hidden;">
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="background: var(--clr-nude-light); color: var(--clr-neutral-dark);">
+                                    <th style="padding: 15px;">Clienta</th>
+                                    <th style="padding: 15px;">Última Visita</th>
+                                    <th style="padding: 15px;">Productos / Preferencias</th>
+                                    <th style="padding: 15px;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>${clientRows}</tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <!-- Tab Trabajadoras -->
             <div id="tab-profs" class="admin-tab-content" style="display:none;">
+                <div style="display:flex; justify-content:flex-end; margin-bottom: 15px;">
+                    <button class="btn btn-primary" id="btn-add-worker"><i data-lucide="plus"></i> Añadir Trabajadora</button>
+                </div>
                 <div class="card" style="padding: 0; overflow: hidden;">
                     <div style="overflow-x: auto;">
                         <table style="width: 100%; border-collapse: collapse; text-align: left;">
@@ -684,6 +733,81 @@ function renderAdminView() {
                     <div style="margin-top: 20px; text-align:center;">
                         <button class="btn btn-outline" id="btn-whatsapp-reminder" style="border-color:#25D366; color:#25D366;"><i data-lucide="message-circle" style="display:inline; vertical-align:middle; width:18px;"></i> Enviar Recordatorio</button>
                     </div>
+                </div>
+            </div>
+
+            <!-- Modal Trabajadora -->
+            <div id="worker-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index: 2000; align-items:center; justify-content:center; padding:20px;">
+                <div class="card" style="max-width: 400px; width: 100%; position:relative; background:white;">
+                    <button id="close-worker" style="position:absolute; top:15px; right:15px; background:none; border:none; cursor:pointer;"><i data-lucide="x"></i></button>
+                    <h3 style="margin-bottom: 20px;">Añadir Trabajadora</h3>
+                    <form id="form-worker">
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; margin-bottom:5px; font-weight:bold;">Nombre Completo:</label>
+                            <input type="text" id="worker-name" required style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; margin-bottom:5px; font-weight:bold;">Correo Electrónico:</label>
+                            <input type="email" id="worker-email" required style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; margin-bottom:5px; font-weight:bold;">Foto de Perfil:</label>
+                            <input type="file" id="worker-photo" accept="image/*" required style="width:100%; padding:7px; border:1px solid #ccc; border-radius:4px; background:white;">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block" id="btn-save-worker">Guardar Trabajadora</button>
+                    </form>
+                    <p id="worker-upload-status" style="margin-top:10px; color:var(--clr-neutral-gray); font-size:0.9rem; display:none;">Procesando...</p>
+                </div>
+            </div>
+
+            <!-- Modal Clienta -->
+            <div id="client-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index: 2000; align-items:center; justify-content:center; padding:20px;">
+                <div class="card" style="max-width: 400px; width: 100%; position:relative; background:white;">
+                    <button id="close-client" style="position:absolute; top:15px; right:15px; background:none; border:none; cursor:pointer;"><i data-lucide="x"></i></button>
+                    <h3 style="margin-bottom: 20px;">Añadir Clienta</h3>
+                    <form id="form-client">
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; margin-bottom:5px; font-weight:bold;">Nombre Completo:</label>
+                            <input type="text" id="client-name-input" required style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; margin-bottom:5px; font-weight:bold;">Teléfono:</label>
+                            <input type="tel" id="client-phone-input" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; margin-bottom:5px; font-weight:bold;">Productos Favoritos / Notas:</label>
+                            <textarea id="client-products" rows="3" placeholder="Ej: Ocupa acrílico marca X" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px; font-family:inherit;"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block" id="btn-save-client">Guardar Clienta</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Modal Producto -->
+            <div id="product-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index: 2000; align-items:center; justify-content:center; padding:20px;">
+                <div class="card" style="max-width: 400px; width: 100%; position:relative; background:white;">
+                    <button id="close-product" style="position:absolute; top:15px; right:15px; background:none; border:none; cursor:pointer;"><i data-lucide="x"></i></button>
+                    <h3 style="margin-bottom: 20px;">Añadir Producto</h3>
+                    <form id="form-product">
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; margin-bottom:5px; font-weight:bold;">Nombre del Producto:</label>
+                            <input type="text" id="prod-name" required style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; margin-bottom:5px; font-weight:bold;">Categoría:</label>
+                            <select id="prod-cat" required style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;">
+                                <option value="manos-pies">Manicure & Pedicure</option>
+                                <option value="mirada">Lashista & Mirada</option>
+                                <option value="capilar">Tratamientos Capilares</option>
+                                <option value="bienestar">Bienestar y Relax</option>
+                            </select>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; margin-bottom:5px; font-weight:bold;">Stock Inicial:</label>
+                            <input type="number" id="prod-stock" required min="0" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block" id="btn-save-product">Guardar Producto</button>
+                    </form>
                 </div>
             </div>
         </div>

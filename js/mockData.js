@@ -70,6 +70,9 @@ const mockData = {
         { id: 'g6', src: 'img/galeria6.jpg', title: 'Pedicure Spa' }
     ],
 
+    // Clientas Globales
+    clients: [],
+
     // Inventario
     inventory: [
         { id: 'inv1', name: 'Esmalte Permanente Rojo', stock: 15, category: 'manos-pies' },
@@ -90,6 +93,8 @@ const mockData = {
 const StorageHelper = {
     _appointmentsCache: [],
     _fichasCache: [],
+    _professionalsCache: [],
+    _inventoryCache: [],
 
     init: async function () {
         if (!localStorage.getItem('nicolett_appointments')) {
@@ -112,14 +117,15 @@ const StorageHelper = {
         if (typeof firebase !== 'undefined' && firebase.auth) {
             firebase.auth().onAuthStateChanged((user) => {
                 if (user) {
-                    const prof = mockData.professionals.find(p => p.email === user.email) || { id: 'p_unknown', name: 'Admin', role: 'admin' };
+                    const profs = this.getProfessionals();
+                    const prof = profs.find(p => p.email === user.email) || { id: 'p_unknown', name: 'Admin', role: 'admin' };
                     localStorage.setItem('nicolett_auth', JSON.stringify({ loggedIn: true, user: prof }));
                     
                     const btnLogout = document.getElementById('btn-logout');
                     if (btnLogout) btnLogout.style.display = 'block';
                     
                     // Si ya estamos en admin, refrescar la vista para mostrar los datos
-                    if(window.location.hash.includes('admin')) {
+                    if(window.location.hash.includes('admin') && typeof AppRouter !== 'undefined') {
                         AppRouter.navigate('admin');
                     }
                 } else {
@@ -127,24 +133,18 @@ const StorageHelper = {
                     const btnLogout = document.getElementById('btn-logout');
                     if (btnLogout) btnLogout.style.display = 'none';
                     
-                    if(window.location.hash.includes('admin')) {
+                    if(window.location.hash.includes('admin') && typeof AppRouter !== 'undefined') {
                         AppRouter.navigate('home');
                     }
                 }
             });
         }
         
-        if (!localStorage.getItem('nicolett_inventory')) {
-            localStorage.setItem('nicolett_inventory', JSON.stringify(mockData.inventory));
-        }
-        if (!localStorage.getItem('nicolett_professionals')) {
-            localStorage.setItem('nicolett_professionals', JSON.stringify(mockData.professionals));
-        }
-        if (!localStorage.getItem('nicolett_fichas')) {
-            localStorage.setItem('nicolett_fichas', JSON.stringify([]));
-        }
         if (!localStorage.getItem('nicolett_gallery_v2')) {
             localStorage.setItem('nicolett_gallery_v2', JSON.stringify(mockData.gallery));
+        }
+        if (!localStorage.getItem('nicolett_clients')) {
+            localStorage.setItem('nicolett_clients', JSON.stringify(mockData.clients));
         }
     },
 
@@ -169,6 +169,20 @@ const StorageHelper = {
             });
             this._fichasCache = fichas;
             
+            const profsSnapshot = await db.collection("professionals").get();
+            const profs = [];
+            profsSnapshot.forEach((doc) => {
+                profs.push({ id: doc.id, ...doc.data() });
+            });
+            this._professionalsCache = profs.length > 0 ? profs : mockData.professionals;
+            
+            const invSnapshot = await db.collection("inventory").get();
+            const inv = [];
+            invSnapshot.forEach((doc) => {
+                inv.push({ id: doc.id, ...doc.data() });
+            });
+            this._inventoryCache = inv.length > 0 ? inv : mockData.inventory;
+
             if(window.location.hash.includes('admin') && typeof AppRouter !== 'undefined') {
                 AppRouter.navigate('admin');
             }
@@ -246,43 +260,50 @@ const StorageHelper = {
 
     // Inventory
     getInventory: function() {
-        return JSON.parse(localStorage.getItem('nicolett_inventory') || '[]');
+        return this._inventoryCache;
     },
-    saveInventory: function(inventory) {
-        localStorage.setItem('nicolett_inventory', JSON.stringify(inventory));
-    },
-    updateProductStock: function(productId, amountUsed) {
+    updateProductStock: async function(productId, amountUsed) {
         const inv = this.getInventory();
         const p = inv.find(x => x.id === productId);
-        if(p) {
+        if(p && typeof db !== 'undefined') {
             p.stock = Math.max(0, p.stock - amountUsed);
-            this.saveInventory(inv);
+            try {
+                await db.collection("inventory").doc(productId).update({ stock: p.stock });
+            } catch(e) { console.error("Error updating stock", e); }
         }
     },
-    addProduct: function(product) {
-        const inv = this.getInventory();
-        product.id = 'inv_' + Date.now();
-        inv.push(product);
-        this.saveInventory(inv);
+    addProduct: async function(product) {
+        if(typeof db !== 'undefined') {
+            try {
+                const docRef = await db.collection("inventory").add(product);
+                product.id = docRef.id;
+                this._inventoryCache.push(product);
+                return product;
+            } catch (e) { console.error("Error adding product", e); }
+        }
     },
 
     // Professionals
     getProfessionals: function() {
-        return JSON.parse(localStorage.getItem('nicolett_professionals') || '[]');
+        return this._professionalsCache;
     },
-    saveProfessionals: function(profs) {
-        localStorage.setItem('nicolett_professionals', JSON.stringify(profs));
+    addProfessional: async function(prof) {
+        if(typeof db !== 'undefined') {
+            try {
+                const docRef = await db.collection("professionals").add(prof);
+                prof.id = docRef.id;
+                this._professionalsCache.push(prof);
+                return prof;
+            } catch (e) { console.error("Error adding professional", e); }
+        }
     },
-    addProfessional: function(prof) {
-        const profs = this.getProfessionals();
-        prof.id = 'p_' + Date.now();
-        profs.push(prof);
-        this.saveProfessionals(profs);
-    },
-    deleteProfessional: function(id) {
-        let profs = this.getProfessionals();
-        profs = profs.filter(p => p.id !== id);
-        this.saveProfessionals(profs);
+    deleteProfessional: async function(id) {
+        if(typeof db !== 'undefined') {
+            try {
+                await db.collection("professionals").doc(id).delete();
+                this._professionalsCache = this._professionalsCache.filter(p => p.id !== id);
+            } catch (e) { console.error("Error deleting professional", e); }
+        }
     },
 
     // --- Gallery ---
@@ -341,6 +362,34 @@ const StorageHelper = {
         } else {
             this._fichasCache = this._fichasCache.filter(f => f.id !== id);
         }
+    },
+
+    // --- Clientas Globales ---
+    getClients: function() {
+        return JSON.parse(localStorage.getItem('nicolett_clients') || '[]');
+    },
+    saveClients: function(clients) {
+        localStorage.setItem('nicolett_clients', JSON.stringify(clients));
+    },
+    addClient: function(client) {
+        const clients = this.getClients();
+        client.id = 'client_' + Date.now();
+        clients.push(client);
+        this.saveClients(clients);
+        return client;
+    },
+    updateClient: function(updatedClient) {
+        let clients = this.getClients();
+        const index = clients.findIndex(c => c.id === updatedClient.id);
+        if(index !== -1) {
+            clients[index] = updatedClient;
+            this.saveClients(clients);
+        }
+    },
+    deleteClient: function(id) {
+        let clients = this.getClients();
+        clients = clients.filter(c => c.id !== id);
+        this.saveClients(clients);
     }
 };
 

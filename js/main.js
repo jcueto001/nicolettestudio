@@ -809,6 +809,18 @@ function initAdminEvents() {
                     
                     const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
                     
+                    if (typeof firebase !== 'undefined' && firebase.auth) {
+                        try {
+                            const secondaryAppName = "SecondaryApp" + Date.now();
+                            const secondaryApp = firebase.initializeApp(firebase.app().options, secondaryAppName);
+                            await secondaryApp.auth().createUserWithEmailAndPassword(email, "Nicolett123!");
+                            await secondaryApp.auth().signOut();
+                            secondaryApp.delete();
+                        } catch (err) {
+                            console.error("No se pudo crear el usuario en Auth (puede que ya exista):", err);
+                        }
+                    }
+
                     await StorageHelper.addProfessional({
                         name: name,
                         email: email,

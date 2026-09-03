@@ -793,6 +793,9 @@ function renderAdminView() {
                             <label style="display:block; margin-bottom:5px; font-weight:bold;">Foto de Perfil:</label>
                             <input type="file" id="worker-photo" accept="image/*" required style="width:100%; padding:7px; border:1px solid #ccc; border-radius:4px; background:white;">
                         </div>
+                        <p style="margin-bottom: 15px; color: var(--clr-neutral-gray); font-size: 0.85rem; border-left: 3px solid var(--clr-rose-gold); padding-left: 10px;">
+                            La contraseña de acceso será: <strong>Nicolett123!</strong>
+                        </p>
                         <button type="submit" class="btn btn-primary btn-block" id="btn-save-worker">Guardar Trabajadora</button>
                     </form>
                     <p id="worker-upload-status" style="margin-top:10px; color:var(--clr-neutral-gray); font-size:0.9rem; display:none;">Procesando...</p>

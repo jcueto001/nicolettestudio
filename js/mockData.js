@@ -96,6 +96,16 @@ const StorageHelper = {
     _professionalsCache: [],
     _inventoryCache: [],
 
+    _refreshAdminIfSafe: function() {
+        if(window.location.hash.includes('admin') && typeof AppRouter !== 'undefined') {
+            const hasOpenModal = document.querySelector('[id$="-modal"][style*="display: flex"]') || 
+                                 document.querySelector('[id$="-modal"][style*="display: block"]');
+            if(!hasOpenModal) {
+                AppRouter.navigate('admin');
+            }
+        }
+    },
+
     init: async function () {
         if (!localStorage.getItem('nicolett_appointments')) {
             localStorage.setItem('nicolett_appointments', JSON.stringify([]));
@@ -125,9 +135,7 @@ const StorageHelper = {
                     if (btnLogout) btnLogout.style.display = 'block';
                     
                     // Si ya estamos en admin, refrescar la vista para mostrar los datos
-                    if(window.location.hash.includes('admin') && typeof AppRouter !== 'undefined') {
-                        AppRouter.navigate('admin');
-                    }
+                    this._refreshAdminIfSafe();
                 } else {
                     localStorage.setItem('nicolett_auth', JSON.stringify({ loggedIn: false, user: null }));
                     const btnLogout = document.getElementById('btn-logout');
@@ -183,9 +191,7 @@ const StorageHelper = {
             });
             this._inventoryCache = inv.length > 0 ? inv : mockData.inventory;
 
-            if(window.location.hash.includes('admin') && typeof AppRouter !== 'undefined') {
-                AppRouter.navigate('admin');
-            }
+            this._refreshAdminIfSafe();
         } catch (e) {
             console.error("Error cargando datos de Firebase:", e);
         }

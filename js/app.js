@@ -3,6 +3,7 @@
  */
 
 const AppRouter = {
+    _navTimeout: null,
     routes: {
         'home': renderHomeView,
         'galeria': renderGaleriaView,
@@ -39,10 +40,12 @@ const AppRouter = {
     navigate: function (route) {
         const contentArea = document.getElementById('app-content');
         if (this.routes[route]) {
+            if (this._navTimeout) clearTimeout(this._navTimeout);
+
             // Animación de salida (opcional)
             contentArea.style.opacity = '0';
 
-            setTimeout(() => {
+            this._navTimeout = setTimeout(() => {
                 // Inyectar HTML de la nueva vista
                 contentArea.innerHTML = this.routes[route]();
 
